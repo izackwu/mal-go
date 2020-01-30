@@ -21,7 +21,7 @@ for file in $TESTS_FOLDER/*
 do
     if [[ -f $file ]]; then
         echo "Run test cases in $file"
-        $TEST_RUNNER $file $BINARY_FILE
+        python $TEST_RUNNER $file $BINARY_FILE
         if [[ ! 0 -eq $? ]]; then
             let FAIL=1
         fi

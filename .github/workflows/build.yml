@@ -12,10 +12,10 @@ jobs:
       with:
         go-version: 1.13
       id: go
-      
+
     - name: Setup Python environment
       uses: actions/setup-python@v1.1.1
-    
+
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
 
@@ -24,6 +24,6 @@ jobs:
 
     - name: Build
       run: go build -o mal-go -v ./src/
-    
+
     - name: Test
-      run: ./ci_test.sh
+      run: bash ./ci_test.sh
