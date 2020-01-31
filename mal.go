@@ -1,10 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
-	"os"
-	"strings"
+	"github.com/keithnull/mal-go/readline"
 )
 
 func READ(in string) string {
@@ -24,14 +22,12 @@ func rep(in string) string {
 }
 
 func main() {
-	reader := bufio.NewReader(os.Stdin)
+	defer readline.Close()
 	for { // infinite REPL loop
-		fmt.Print("user> ")
-		line, err := reader.ReadString('\n')
+		input, err := readline.PromptAndRead("user> ")
 		if err != nil { // EOF or something unexpected
 			break
 		}
-		line = strings.TrimRight(line, "\n")
-		fmt.Println(rep(line))
+		fmt.Println(rep(input))
 	}
 }
