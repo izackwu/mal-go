@@ -13,3 +13,10 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+# Compiled binary files
+mal-go
+mal-go.exe
+
+# GoLand configurations
+.idea
