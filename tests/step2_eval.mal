@@ -1,0 +1,49 @@
+;; Testing evaluation of arithmetic operations
+(+ 1 2)
+;=>3
+
+(- 1 2)
+;=>-1
+
+(* 1 -2)
+;=>-2
+
+(/ 1 2)
+;=>0
+
+(/ 1 0)
+;=>division by zero
+
+(+ 5 (* 2 3))
+;=>11
+
+(- (+ 5 (* 2 3)) 3)
+;=>8
+
+(/ (- (+ 5 (* 2 3)) 3) 4)
+;=>2
+
+(/ (- (+ 515 (* 87 311)) 302) 27)
+;=>1010
+
+(/ (- (+ 515 (* -87 311)) 296) 27)
+;=>-994
+
+;; Testing empty list
+()
+;=>()
+
+;; Test invalid symbol
+(abc 1 2)
+;=>failed to look up 'abc' in current environment
+
+(? 1 2)
+;=>failed to look up '?' in current environment
+
+;; Test incorrect number of arguments
+(+ 1)
+;=>incorrect number of arguments: expect 2 but get 1
+
+(- 1 2 3)
+;=>incorrect number of arguments: expect 2 but get 3
+
