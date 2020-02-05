@@ -51,7 +51,7 @@ func (tr *TokenReader) Next() (string, error) {
 func ReadStr(input string) (types.MalType, error) {
 	// call tokenize()
 	tokens, err := tokenize(input)
-	if err != nil{
+	if err != nil {
 		return nil, err
 	}
 	// create a new Reader instance
