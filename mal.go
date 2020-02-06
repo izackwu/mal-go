@@ -2,68 +2,12 @@ package main
 
 import (
 	"fmt"
+	"github.com/keithnull/mal-go/environment"
 	"github.com/keithnull/mal-go/printer"
 	"github.com/keithnull/mal-go/reader"
 	"github.com/keithnull/mal-go/readline"
 	. "github.com/keithnull/mal-go/types" // not recommended but convenient
 )
-
-var replEnv = map[string]MalType{
-	"+": func(args ...MalType) (MalType, error) {
-		if err := assertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		return MalNumber{Value: a.Value + b.Value}, nil
-	},
-	"-": func(args ...MalType) (MalType, error) {
-		if err := assertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		return MalNumber{Value: a.Value - b.Value}, nil
-	},
-	"*": func(args ...MalType) (MalType, error) {
-		if err := assertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		return MalNumber{Value: a.Value * b.Value}, nil
-	},
-	"/": func(args ...MalType) (MalType, error) {
-		if err := assertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		if b.Value == 0 {
-			return nil, fmt.Errorf("division by zero")
-		}
-		return MalNumber{Value: a.Value / b.Value}, nil
-	},
-}
-
-func assertLength(args []MalType, expect int) error {
-	if actual := len(args); actual != expect {
-		return fmt.Errorf("incorrect number of arguments: expect %d but get %d", expect, actual)
-	}
-	return nil
-}
 
 func READ(in string) (MalType, error) {
 	ast, err := reader.ReadStr(in)
@@ -73,12 +17,12 @@ func READ(in string) (MalType, error) {
 	return ast, nil
 }
 
-func evalAST(ast MalType, env map[string]MalType) (MalType, error) {
+func evalAST(ast MalType, env MalEnv) (MalType, error) {
 	switch t := ast.(type) {
 	case MalSymbol:
-		elem, ok := env[t.Value]
-		if !ok {
-			return nil, fmt.Errorf("failed to look up '%s' in current environment", t.Value)
+		elem, err := env.Get(t)
+		if err != nil {
+			return nil, err
 		}
 		return elem, nil
 	case MalList:
@@ -96,7 +40,7 @@ func evalAST(ast MalType, env map[string]MalType) (MalType, error) {
 	}
 }
 
-func EVAL(ast MalType, env map[string]MalType) (MalType, error) {
+func EVAL(ast MalType, env MalEnv) (MalType, error) {
 	switch t := ast.(type) {
 	case MalList:
 		if len(t) == 0 {
@@ -120,7 +64,7 @@ func PRINT(exp MalType) string {
 	return printer.PrintStr(exp)
 }
 
-func rep(in string, env map[string]MalType) string {
+func rep(in string, env MalEnv) string {
 	ast, err := READ(in)
 	if err != nil {
 		return fmt.Sprint(err)
@@ -135,6 +79,7 @@ func rep(in string, env map[string]MalType) string {
 
 func main() {
 	defer readline.Close()
+	replEnv := environment.GetInitEnv()
 	for { // infinite REPL loop
 		input, err := readline.PromptAndRead("user> ")
 		if err != nil { // EOF or something unexpected
