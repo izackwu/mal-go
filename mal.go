@@ -46,15 +46,63 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 		if len(t) == 0 {
 			return t, nil
 		}
+		// the apply phase in Lisp
+		first := ""
+		if symbol, ok := t[0].(MalSymbol); ok {
+			first = symbol.Value
+		}
 		evaluatedList, err := evalAST(t, env)
-		if err != nil {
-			return nil, err
+		switch first {
+		case "def!":
+			if len(t) != 3 {
+				return nil, fmt.Errorf("incorrect number of parameters for 'def!'")
+			}
+			k, ok := t[1].(MalSymbol)
+			if !ok {
+				return nil, fmt.Errorf("the first parameter is expected to be a symbol")
+			}
+			v, err := EVAL(t[2], env)
+			if err != nil {
+				return nil, err
+			}
+			err = env.Set(k, v)
+			return v, err
+		case "let*":
+			if len(t) != 3 {
+				return nil, fmt.Errorf("incorrect number of arguments for 'let*'")
+			}
+			bindings, ok := t[1].(MalList)
+			if !ok || len(bindings)%2 != 0 {
+				return nil, fmt.Errorf("the first parameter is expected to be a list of even length")
+			}
+			// do variable bindings in the temp environment
+			tempEnv := environment.CreateEnv(env)
+			for i := 0; i < len(bindings); i += 2 {
+				k, ok := bindings[i].(MalSymbol)
+				if !ok {
+					return nil, fmt.Errorf("invalid symbol(s) in variable bindings")
+				}
+				v, err := EVAL(bindings[i+1], tempEnv)
+				if err != nil {
+					return nil, err
+				}
+				err = tempEnv.Set(k, v)
+				if err != nil {
+					return nil, err
+				}
+			}
+			return EVAL(t[2], tempEnv)
+		default: // function calling or invalid cases
+			if err != nil {
+				return nil, err
+			}
+			f, ok := evaluatedList.(MalList)[0].(func(...MalType) (MalType, error))
+			if !ok {
+				return nil, fmt.Errorf("invalid function calling")
+			}
+			return f(evaluatedList.(MalList)[1:]...)
 		}
-		f, ok := evaluatedList.(MalList)[0].(func(...MalType) (MalType, error))
-		if !ok {
-			return nil, fmt.Errorf("invalid function calling")
-		}
-		return f(evaluatedList.(MalList)[1:]...)
+
 	default:
 		return evalAST(ast, env)
 	}
