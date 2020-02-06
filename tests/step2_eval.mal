@@ -35,10 +35,10 @@
 
 ;; Test invalid symbol
 (abc 1 2)
-;=>failed to look up 'abc' in current environment
+;=>failed to look up 'abc' in environments
 
 (? 1 2)
-;=>failed to look up '?' in current environment
+;=>failed to look up '?' in environments
 
 ;; Test incorrect number of arguments
 (+ 1)
