@@ -48,15 +48,19 @@ func (tr *TokenReader) Next() (string, error) {
 	return token, nil
 }
 
+// ReadStr builds a Mal AST with the given string
 func ReadStr(input string) (types.MalType, error) {
 	// call tokenize()
 	tokens, err := tokenize(input)
 	if err != nil {
 		return nil, err
 	}
+	if len(tokens) == 0 {
+		return nil, fmt.Errorf("empty input")
+	}
 	// create a new Reader instance
 	tr := TokenReader{tokens, 0}
-	// call read_form() with the Reader instance
+	// call readForm() with the Reader instance
 	return readForm(&tr)
 }
 
@@ -82,9 +86,20 @@ func readForm(rd Reader) (types.MalType, error) {
 	if err != nil {
 		return nil, err
 	}
-	if token == "(" {
+	switch token {
+	case "(":
 		return readList(rd)
-	} else {
+	case ")":
+		return nil, fmt.Errorf("unexpected ']'")
+	case "[":
+		return readVector(rd)
+	case "]":
+		return nil, fmt.Errorf("unexpected ']")
+	case "{":
+		return readHashmap(rd)
+	case "}":
+		return nil, fmt.Errorf("unexpected '}")
+	default:
 		return readAtom(rd)
 	}
 }
@@ -100,20 +115,40 @@ func readAtom(rd Reader) (types.MalType, error) {
 		if err != nil {
 			return nil, err
 		}
-		return types.MalNumber{number}, nil
+		return types.MalNumber{Value: number}, nil
+	} else if matched, _ := regexp.MatchString(`^"(?:\\.|[^\\"])*"?$`, token); matched { // string
+		if matched, _ := regexp.MatchString(`^"(?:\\.|[^\\"])*"$`, token); !matched {
+			return nil, fmt.Errorf("unclosed string: %s", token)
+		}
+		unquoted, err := strconv.Unquote(token) // unquote and handle escape chars gracefully
+		if err != nil {
+			return nil, err
+		}
+		return types.MalString{Value: unquoted}, nil
+	} else if token == "nil" {
+		return types.MalNil, nil
+	} else if token == "true" {
+		return types.MalTrue, nil
+	} else if token == "false" {
+		return types.MalFalse, nil
+	} else if token[0] == ':' {
+		return types.MalKeyword{Value: token[1:]}, nil
 	} else { // so far, only symbols are left
-		return types.MalSymbol{token}, nil
+		return types.MalSymbol{Value: token}, nil
 	}
 }
 
-func readList(rd Reader) (types.MalList, error) {
-	// sanity check as last peek we already saw "("
-	start, _ := rd.Next()
-	if start != "(" {
-		return nil, fmt.Errorf("Unexpect starting token for a list: %s", start)
+// readStartEnd assumes the next token is `start` and reads till `end`
+// It returns a list of Mal objects
+// If any error encountered, it will stop reading immediately and return that error
+func readStartEnd(rd Reader, start, end string) (types.MalList, error) {
+	// sanity check as last peek we already saw the starting token
+	first, _ := rd.Next()
+	if first != start {
+		return nil, fmt.Errorf("incorrect starting token: expect '%s' but get '%s'", start, first)
 	}
 	astList := types.MalList{}
-	for token, err := rd.Peek(); token != ")"; token, err = rd.Peek() {
+	for token, err := rd.Peek(); token != end; token, err = rd.Peek() {
 		if err != nil {
 			return nil, err
 		}
@@ -123,7 +158,39 @@ func readList(rd Reader) (types.MalList, error) {
 		}
 		astList = append(astList, ast)
 	}
-	// last peek, we saw ")"
-	rd.Next()
+	// last peek, we saw the ending token
+	_, _ = rd.Next()
 	return astList, nil
+}
+
+func readList(rd Reader) (types.MalList, error) {
+	return readStartEnd(rd, "(", ")")
+}
+
+func readVector(rd Reader) (types.MalType, error) {
+	list, err := readStartEnd(rd, "[", "]")
+	if err != nil {
+		return nil, err
+	}
+	return types.MalVector(list), nil
+}
+
+func readHashmap(rd Reader) (types.MalType, error) {
+	list, err := readStartEnd(rd, "{", "}")
+	if err != nil {
+		return nil, err
+	}
+	if len(list)%2 != 0 {
+		return nil, fmt.Errorf("incorrect number of elements for a hashmap")
+	}
+	hashmap := make(types.MalHashmap)
+	for i := 0; i < len(list); i += 2 {
+		switch t := list[i].(type) {
+		case types.MalKeyword, types.MalString:
+			hashmap[t] = list[i+1]
+		default:
+			return nil, fmt.Errorf("hashmap keys only accept string or keyword")
+		}
+	}
+	return hashmap, nil
 }

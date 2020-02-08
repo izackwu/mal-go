@@ -102,14 +102,13 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 			}
 			return f(evaluatedList.(MalList)[1:]...)
 		}
-
 	default:
 		return evalAST(ast, env)
 	}
 }
 
 func PRINT(exp MalType) string {
-	return printer.PrintStr(exp)
+	return printer.PrintStr(exp, true)
 }
 
 func rep(in string, env MalEnv) string {
