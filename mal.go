@@ -40,6 +40,8 @@ func evalAST(ast MalType, env MalEnv) (MalType, error) {
 	}
 }
 
+// EVAL evaluates `ast` within `env` environment
+// If any error occurs, the result will be `nil`
 func EVAL(ast MalType, env MalEnv) (MalType, error) {
 	switch t := ast.(type) {
 	case MalList:
@@ -102,6 +104,22 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 			}
 			return f(evaluatedList.(MalList)[1:]...)
 		}
+	case MalVector:
+		evaluatedList, err := evalAST(MalList(t), env)
+		if err != nil {
+			return nil, err
+		}
+		return MalVector(evaluatedList.(MalList)), nil
+	case MalHashmap:
+		result := make(MalHashmap)
+		for k, v := range t {
+			v, err := EVAL(v, env)
+			if err != nil {
+				return nil, err
+			}
+			result[k] = v
+		}
+		return result, nil
 	default:
 		return evalAST(ast, env)
 	}

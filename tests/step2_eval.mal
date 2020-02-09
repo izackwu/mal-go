@@ -47,3 +47,16 @@
 (- 1 2 3)
 ;=>incorrect number of arguments: expect 2 but get 3
 
+;; Testing evaluation within collection literals
+[1 2 (+ 1 2)]
+;=>[1 2 3]
+
+{"a" (+ 7 8)}
+;=>{"a" 15}
+
+{:a (+ 7 8)}
+;=>{:a 15}
+
+{:k [(/ 6 3) (- 0 1)]}
+;=>{:k [2 -1]}
+
