@@ -56,7 +56,9 @@ func PrintStr(ast types.MalType, readable bool) string {
 		return printList(types.MalList(t), "[", "]", readable)
 	case types.MalHashmap: // {foo bar}
 		return printHashmap(t, readable)
+	case types.MalFunction:
+		return "#<function>"
 	default:
-		return "[UNKNOWN VALUE]"
+		return "/UNKNOWN VALUE/"
 	}
 }

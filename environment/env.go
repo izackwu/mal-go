@@ -5,7 +5,7 @@ import (
 	. "github.com/keithnull/mal-go/types"
 )
 
-var initialBindings = map[string]MalType{
+var initialBindings = map[string]MalFunction{
 	"+": func(args ...MalType) (MalType, error) {
 		if err := AssertLength(args, 2); err != nil {
 			return nil, err
@@ -90,15 +90,33 @@ func (e *Env) Get(key MalSymbol) (MalType, error) {
 	return targetEnv.(*Env).data[key.Value], nil
 }
 
-func CreateEnv(outer MalEnv) *Env {
-	return &Env{
+// CreateEnv creates a new environment, with `outer` as its outer environment, `binds` and `exps`
+// for variable bindings, i.e., `binds[i]` will be bound to `exps[i]`
+// Note that `binds` and `exps` should be two MalList of equal length
+func CreateEnv(outer MalEnv, binds MalList, exps MalList) (*Env, error) {
+	env := &Env{
 		outer: outer,
 		data:  make(map[string]MalType),
 	}
+	if len(binds) != len(exps) {
+		return nil, fmt.Errorf("different numbers of bindings and expressions")
+	}
+	for i := 0; i < len(binds); i++ {
+		k, v := binds[i], exps[i]
+		if _, ok := k.(MalSymbol); !ok {
+			return nil, fmt.Errorf("invalid symbol(s) in variable bindings")
+		}
+		err := env.Set(k.(MalSymbol), v)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return env, nil
 }
 
+// GetInitEnv creates an initial environment (with only builtin variable bindings)
 func GetInitEnv() (e *Env) {
-	e = CreateEnv(nil)
+	e, _ = CreateEnv(nil, nil, nil)
 	for k, v := range initialBindings {
 		err := e.Set(MalSymbol{Value: k}, v)
 		if err != nil {

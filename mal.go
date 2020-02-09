@@ -78,7 +78,7 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 				return nil, fmt.Errorf("the first parameter is expected to be a list of even length")
 			}
 			// do variable bindings in the temp environment
-			tempEnv := environment.CreateEnv(env)
+			tempEnv, _ := environment.CreateEnv(env, nil, nil)
 			for i := 0; i < len(bindings); i += 2 {
 				k, ok := bindings[i].(MalSymbol)
 				if !ok {
@@ -98,7 +98,7 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 			if err != nil {
 				return nil, err
 			}
-			f, ok := evaluatedList.(MalList)[0].(func(...MalType) (MalType, error))
+			f, ok := evaluatedList.(MalList)[0].(MalFunction)
 			if !ok {
 				return nil, fmt.Errorf("invalid function calling")
 			}

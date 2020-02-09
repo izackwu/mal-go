@@ -32,6 +32,8 @@ type MalSymbol struct {
 	Value string
 }
 
+type MalFunction func(args ...MalType) (MalType, error)
+
 type MalEnv interface {
 	Set(key MalSymbol, value MalType) error
 	Find(key MalSymbol) MalEnv
