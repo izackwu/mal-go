@@ -7,28 +7,32 @@ import (
 )
 
 var (
-	history_file = filepath.Join(os.TempDir(), ".mal_history")
-	line         *liner.State
+	historyFile = filepath.Join(os.TempDir(), ".mal_history")
+	line        *liner.State
 )
 
 func init() {
 	line = liner.NewLiner()
 	line.SetCtrlCAborts(true)
 	// load history from file
-	if f, err := os.Open(history_file); err == nil {
-		line.ReadHistory(f)
-		f.Close()
+	if f, err := os.Open(historyFile); err == nil {
+		_, _ = line.ReadHistory(f)
+		_ = f.Close()
 	}
 }
 
+// Close writes this session's history back and closes the liner
+// Remember to call this function before exiting!
 func Close() {
 	// before closing, write history back to file
-	if f, err := os.Create(history_file); err == nil {
-		line.WriteHistory(f)
+	if f, err := os.Create(historyFile); err == nil {
+		_, _ = line.WriteHistory(f)
 	}
-	line.Close()
+	_ = line.Close()
 }
 
+// PromptAndRead prints `prompt` in the console and reads one line from user
+// Note that '\n' will be removed
 func PromptAndRead(prompt string) (string, error) {
 	input, err := line.Prompt(prompt)
 	if err != nil {

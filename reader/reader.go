@@ -12,26 +12,32 @@ var (
 		`~^@]|"(?:\\.|[^\\"])*"?|;.*|[^\s\[\]{}('"` + "`" + `,;)]*)`
 )
 
+// Reader is a abstract interface with two methods:
+// - Next() (string, error): returns the token at the current position and increments the position
+// - Peek() (string, error): returns the token at the current position
 type Reader interface {
-	Next() (string, error) // returns the token at the current position and increments the position
-	Peek() (string, error) // returns the token at the current position
+	Next() (string, error)
+	Peek() (string, error)
 }
 
+// TokenReader implements Reader interface
 type TokenReader struct {
 	tokens   []string
 	position int
 }
 
+// anyError does some sanity checks for Peek() and Next()
 func (tr *TokenReader) anyError() error {
 	if tr == nil {
-		return fmt.Errorf("Nil TokenReader")
+		return fmt.Errorf("nil TokenReader")
 	}
 	if tr.position >= len(tr.tokens) {
-		return fmt.Errorf("Position out of bound")
+		return fmt.Errorf("running out of tokens")
 	}
 	return nil
 }
 
+// Peek returns the token at the current position
 func (tr *TokenReader) Peek() (string, error) {
 	if err := tr.anyError(); err != nil {
 		return "", err
@@ -39,6 +45,7 @@ func (tr *TokenReader) Peek() (string, error) {
 	return tr.tokens[tr.position], nil
 }
 
+// Next returns the token at the current position and increments the position
 func (tr *TokenReader) Next() (string, error) {
 	if err := tr.anyError(); err != nil {
 		return "", err
