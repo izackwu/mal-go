@@ -35,6 +35,22 @@ func evalAST(ast MalType, env MalEnv) (MalType, error) {
 			}
 		}
 		return evaluatedList, nil
+	case MalVector:
+		evaluatedList, err := evalAST(MalList(t), env)
+		if err != nil {
+			return nil, err
+		}
+		return MalVector(evaluatedList.(MalList)), nil
+	case MalHashmap:
+		result := make(MalHashmap)
+		for k, v := range t {
+			v, err := EVAL(v, env)
+			if err != nil {
+				return nil, err
+			}
+			result[k] = v
+		}
+		return result, nil
 	default:
 		return ast, nil
 	}
@@ -43,6 +59,7 @@ func evalAST(ast MalType, env MalEnv) (MalType, error) {
 // EVAL evaluates `ast` within `env` environment
 // If any error occurs, the result will be `nil`
 func EVAL(ast MalType, env MalEnv) (MalType, error) {
+	// only MalList is handled here, other types will be passed to evalAST() directly
 	switch t := ast.(type) {
 	case MalList:
 		if len(t) == 0 {
@@ -94,6 +111,54 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 				}
 			}
 			return EVAL(t[2], tempEnv)
+		case "do":
+			var final MalType
+			for _, exp := range t[1:] {
+				final, err = EVAL(exp, env)
+				if err != nil {
+					return nil, err
+				}
+			}
+			return final, nil
+		case "if":
+			if len(t) == 3 { // by default, the False branch is nil
+				t = append(t, MalNil)
+			} else if len(t) != 4 {
+				return nil, fmt.Errorf("incorrect number of arguments for 'if'")
+			}
+			condition, err := EVAL(t[1], env)
+			if err != nil {
+				return nil, err
+			}
+			if condition == MalFalse || condition == MalNil { // False
+				return EVAL(t[3], env)
+			}
+			return EVAL(t[2], env) // True
+		case "fn*":
+			if len(t) != 3 {
+				return nil, fmt.Errorf("incorrect number of arguments for 'fn*'")
+			}
+			// make sure parameters are a list of MalSymbols
+			// maybe this is unnecessary as it will be checked during future function calling
+			// but this makes me feel securer
+			params, ok := t[1].(MalList)
+			if !ok {
+				return nil, fmt.Errorf("the first argument should be function parameter list")
+			}
+			for i, v := range params {
+				if _, ok := v.(MalSymbol); !ok {
+					return nil, fmt.Errorf("parameter %d is not a valid symbol", i)
+				}
+			}
+			// it's so good that Golang supports closure, love it~
+			closure := func(args ...MalType) (MalType, error) {
+				wrappedEnv, err := environment.CreateEnv(env, params, args)
+				if err != nil {
+					return nil, err
+				}
+				return EVAL(t[2], wrappedEnv)
+			}
+			return MalFunction(closure), nil // cast to MalFunction
 		default: // function calling or invalid cases
 			if err != nil {
 				return nil, err
@@ -104,22 +169,6 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 			}
 			return f(evaluatedList.(MalList)[1:]...)
 		}
-	case MalVector:
-		evaluatedList, err := evalAST(MalList(t), env)
-		if err != nil {
-			return nil, err
-		}
-		return MalVector(evaluatedList.(MalList)), nil
-	case MalHashmap:
-		result := make(MalHashmap)
-		for k, v := range t {
-			v, err := EVAL(v, env)
-			if err != nil {
-				return nil, err
-			}
-			result[k] = v
-		}
-		return result, nil
 	default:
 		return evalAST(ast, env)
 	}
