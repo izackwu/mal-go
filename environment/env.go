@@ -2,58 +2,9 @@ package environment
 
 import (
 	"fmt"
+	"github.com/keithnull/mal-go/core"
 	. "github.com/keithnull/mal-go/types"
 )
-
-var initialBindings = map[string]MalFunction{
-	"+": func(args ...MalType) (MalType, error) {
-		if err := AssertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		return MalNumber{Value: a.Value + b.Value}, nil
-	},
-	"-": func(args ...MalType) (MalType, error) {
-		if err := AssertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		return MalNumber{Value: a.Value - b.Value}, nil
-	},
-	"*": func(args ...MalType) (MalType, error) {
-		if err := AssertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		return MalNumber{Value: a.Value * b.Value}, nil
-	},
-	"/": func(args ...MalType) (MalType, error) {
-		if err := AssertLength(args, 2); err != nil {
-			return nil, err
-		}
-		a, ok1 := args[0].(MalNumber)
-		b, ok2 := args[1].(MalNumber)
-		if !ok1 || !ok2 {
-			return nil, fmt.Errorf("invalid operands")
-		}
-		if b.Value == 0 {
-			return nil, fmt.Errorf("division by zero")
-		}
-		return MalNumber{Value: a.Value / b.Value}, nil
-	},
-}
 
 // *Env implements MalEnv interface
 type Env struct {
@@ -117,7 +68,7 @@ func CreateEnv(outer MalEnv, binds MalList, exps MalList) (*Env, error) {
 // GetInitEnv creates an initial environment (with only builtin variable bindings)
 func GetInitEnv() (e *Env) {
 	e, _ = CreateEnv(nil, nil, nil)
-	for k, v := range initialBindings {
+	for k, v := range core.NameSpace {
 		err := e.Set(MalSymbol{Value: k}, v)
 		if err != nil {
 			return nil
