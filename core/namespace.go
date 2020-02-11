@@ -6,20 +6,27 @@ import (
 
 // NameSpace is the initial namespace for mal
 var NameSpace = map[string]types.MalFunction{
-	"+":      add,
-	"-":      sub,
-	"*":      mul,
-	"/":      div,
-	"prn":    printValue,
+	// arithmetic operators
+	"+": add,
+	"-": sub,
+	"*": mul,
+	"/": div,
+	// string functions
+	"pr-str":  strReadable,
+	"str":     strUnreadable,
+	"prn":     printReadable,
+	"println": printUnreadable,
+	// list related operations
 	"list":   createList,
 	"list?":  isList,
 	"empty?": isEmptyList,
 	"count":  getListSize,
-	"=":      isEqual,
-	"<":      isLess,
-	"<=":     isLessEqual,
-	">":      isGreater,
-	">=":     isGreaterEqual,
+	// comparision
+	"=":  isEqual,
+	"<":  isLess,
+	"<=": isLessEqual,
+	">":  isGreater,
+	">=": isGreaterEqual,
 }
 
 // InitCommands contain mal commands to be executed in sequence during initialization

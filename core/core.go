@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/keithnull/mal-go/printer"
 	"github.com/keithnull/mal-go/types"
+	"strings"
 )
 
 // AssertLength asserts the length of a list
@@ -62,13 +63,36 @@ func div(args ...types.MalType) (types.MalType, error) {
 	return types.MalNumber{Value: a / b}, nil
 }
 
-func printValue(args ...types.MalType) (types.MalType, error) {
-	if err := AssertLength(args, 1); err != nil {
-		return nil, err
+/* String functions */
+
+// toJoinedString converts each element in `values` to string and concatenates them with `sep`
+func toJoinedString(values []types.MalType, sep string, readable bool) string {
+	strList := make([]string, 0, len(values))
+	for _, v := range values {
+		strList = append(strList, printer.PrintStr(v, readable))
 	}
-	fmt.Println(printer.PrintStr(args[0], true))
+	return strings.Join(strList, sep)
+}
+
+func strReadable(args ...types.MalType) (types.MalType, error) {
+	return types.MalString{Value: toJoinedString(args, " ", true)}, nil
+}
+
+func strUnreadable(args ...types.MalType) (types.MalType, error) {
+	return types.MalString{Value: toJoinedString(args, "", false)}, nil
+}
+
+func printReadable(args ...types.MalType) (types.MalType, error) {
+	fmt.Println(toJoinedString(args, " ", true))
 	return types.MalNil, nil
 }
+
+func printUnreadable(args ...types.MalType) (types.MalType, error) {
+	fmt.Println(toJoinedString(args, " ", false))
+	return types.MalNil, nil
+}
+
+/* List related functions */
 
 func createList(args ...types.MalType) (types.MalType, error) {
 	// it's necessary to force cast to MalList (though nothing is done actually)
@@ -139,6 +163,9 @@ func isEqual(args ...types.MalType) (types.MalType, error) {
 	case types.MalString:
 		second, ok := args[1].(types.MalString)
 		same = ok && first.Value == second.Value
+	case types.MalKeyword:
+		second, ok := args[1].(types.MalKeyword)
+		same = ok && first.Value == second.Value
 	case types.MalVector:
 		second, ok := args[1].(types.MalVector)
 		if ok { // convert both to MalList and then compare
@@ -178,6 +205,7 @@ func isLessEqual(args ...types.MalType) (types.MalType, error) {
 	}
 	return types.NotMalBool(greater.(types.MalLiteral)), nil
 }
+
 func isGreaterEqual(args ...types.MalType) (types.MalType, error) {
 	less, err := isLess(args...)
 	if err != nil {
