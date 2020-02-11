@@ -21,3 +21,8 @@ var NameSpace = map[string]types.MalFunction{
 	">":      isGreater,
 	">=":     isGreaterEqual,
 }
+
+// InitCommands contain mal commands to be executed in sequence during initialization
+var InitCommands = []string{
+	"(def! not (fn* (a) (if a false true)))",
+}

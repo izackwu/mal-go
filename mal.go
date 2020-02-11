@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/keithnull/mal-go/core"
 	"github.com/keithnull/mal-go/environment"
 	"github.com/keithnull/mal-go/printer"
 	"github.com/keithnull/mal-go/reader"
@@ -191,9 +192,16 @@ func rep(in string, env MalEnv) string {
 	return output
 }
 
+func runInitCommands(env MalEnv) {
+	for _, command := range core.InitCommands {
+		_ = rep(command, env) // output is ignored
+	}
+}
+
 func main() {
 	defer readline.Close()
 	replEnv := environment.GetInitEnv()
+	runInitCommands(replEnv)
 	for { // infinite REPL loop
 		input, err := readline.PromptAndRead("user> ")
 		if err != nil { // EOF or something unexpected
