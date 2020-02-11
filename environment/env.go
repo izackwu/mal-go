@@ -54,15 +54,41 @@ func CreateEnv(outer types.MalEnv, binds types.MalList, exps types.MalList) (*En
 		outer: outer,
 		data:  make(map[string]types.MalType),
 	}
-	if len(binds) != len(exps) {
-		return nil, fmt.Errorf("different numbers of bindings and expressions")
-	}
-	for i := 0; i < len(binds); i++ {
-		k, v := binds[i], exps[i]
-		if _, ok := k.(types.MalSymbol); !ok {
+	// first pass: check `binds` type and whether it's variadic
+	variadic := false
+	for i, k := range binds {
+		symbol, ok := k.(types.MalSymbol)
+		if !ok {
 			return nil, fmt.Errorf("invalid symbol(s) in variable bindings")
 		}
-		err := env.Set(k.(types.MalSymbol), v)
+		if symbol.Value == "&" { // variadic function parameters
+			if i != len(binds)-2 {
+				return nil, fmt.Errorf("invalid position for '&' in bindings")
+			}
+			variadic = true
+		}
+	}
+	// check the length of `binds` and `exps`
+	if variadic && len(binds)-2 > len(exps) {
+		return nil, fmt.Errorf("not enough expressions for a variadic function")
+	} else if !variadic && len(binds) != len(exps) {
+		return nil, fmt.Errorf(
+			"different numbers of bindings and expressions for a non-variadic function")
+	}
+	// second pass: do variable bindings actually
+	for i, k := range binds {
+		// skip "&"
+		if variadic && i == len(binds)-2 {
+			continue
+		}
+		symbol, _ := k.(types.MalSymbol)
+		var v types.MalType
+		if variadic && i == len(binds)-1 {
+			v = exps[i-1:]
+		} else { // in case of index out of bound
+			v = exps[i]
+		}
+		err := env.Set(symbol, v)
 		if err != nil {
 			return nil, err
 		}
