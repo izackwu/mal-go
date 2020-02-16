@@ -58,6 +58,8 @@ func PrintStr(ast types.MalType, readable bool) string {
 		return printHashmap(t, readable)
 	case types.MalFunction:
 		return "#<function>"
+	case types.MalFunctionTCO:
+		return "#<functionTCO>"
 	default:
 		return "/UNKNOWN VALUE/"
 	}
