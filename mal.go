@@ -216,6 +216,11 @@ func runInitCommands(env MalEnv) {
 func main() {
 	defer readline.Close()
 	replEnv := environment.GetInitEnv()
+	// it breaks the program's structure to add 'eval' function here
+	// but doing so is the simplest way
+	_ = replEnv.Set(MalSymbol{Value: "eval"}, MalFunction(func(args ...MalType) (MalType, error) {
+		return EVAL(args[0], replEnv)
+	}))
 	runInitCommands(replEnv)
 	for { // infinite REPL loop
 		input, err := readline.PromptAndRead("user> ")

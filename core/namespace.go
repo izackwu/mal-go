@@ -12,10 +12,12 @@ var NameSpace = map[string]types.MalFunction{
 	"*": mul,
 	"/": div,
 	// string functions
-	"pr-str":  strReadable,
-	"str":     strUnreadable,
-	"prn":     printReadable,
-	"println": printUnreadable,
+	"pr-str":      strReadable,
+	"str":         strUnreadable,
+	"prn":         printReadable,
+	"println":     printUnreadable,
+	"read-string": readString,
+	"slurp":       slurp,
 	// list related operations
 	"list":   createList,
 	"list?":  isList,
@@ -31,5 +33,6 @@ var NameSpace = map[string]types.MalFunction{
 
 // InitCommands contain mal commands to be executed in sequence during initialization
 var InitCommands = []string{
-	"(def! not (fn* (a) (if a false true)))",
+	`(def! not (fn* (a) (if a false true)))`,
+	`(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\nnil)")))))`,
 }

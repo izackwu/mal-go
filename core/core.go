@@ -3,7 +3,9 @@ package core
 import (
 	"fmt"
 	"github.com/keithnull/mal-go/printer"
+	"github.com/keithnull/mal-go/reader"
 	"github.com/keithnull/mal-go/types"
+	"io/ioutil"
 	"strings"
 )
 
@@ -26,6 +28,18 @@ func assertTwoNumbers(args []types.MalType) (int, int, error) {
 		return 0, 0, fmt.Errorf("invalid operand(s)")
 	}
 	return a.Value, b.Value, nil
+}
+
+// assertOneString asserts that `args` is just a list of one string
+func assertOneString(args []types.MalType) (string, error) {
+	if err := AssertLength(args, 1); err != nil {
+		return "", err
+	}
+	str, ok := args[0].(types.MalString)
+	if !ok {
+		return "", fmt.Errorf("incorrect arguments type: MalString is expected")
+	}
+	return str.Value, nil
 }
 
 func add(args ...types.MalType) (types.MalType, error) {
@@ -212,4 +226,24 @@ func isGreaterEqual(args ...types.MalType) (types.MalType, error) {
 		return nil, err
 	}
 	return types.NotMalBool(less.(types.MalLiteral)), nil
+}
+
+func readString(args ...types.MalType) (types.MalType, error) {
+	inputStr, err := assertOneString(args)
+	if err != nil {
+		return nil, err
+	}
+	return reader.ReadStr(inputStr)
+}
+
+func slurp(args ...types.MalType) (types.MalType, error) {
+	filepath, err := assertOneString(args)
+	if err != nil {
+		return nil, err
+	}
+	content, err := ioutil.ReadFile(filepath)
+	if err != nil {
+		return nil, err
+	}
+	return types.MalString{Value: string(content)}, nil
 }
