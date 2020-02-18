@@ -73,7 +73,6 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 			if symbol, ok := t[0].(MalSymbol); ok {
 				first = symbol.Value
 			}
-			evaluatedList, err := evalAST(t, env)
 			switch first {
 			case "def!":
 				if len(t) != 3 {
@@ -116,7 +115,7 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 				ast, env = t[2], tempEnv // tail call
 			case "do":
 				for _, exp := range t[1 : len(t)-1] {
-					_, err = EVAL(exp, env)
+					_, err := EVAL(exp, env)
 					if err != nil {
 						return nil, err
 					}
@@ -168,6 +167,7 @@ func EVAL(ast MalType, env MalEnv) (MalType, error) {
 					Function: closure,
 				}, nil
 			default: // function calling or invalid cases
+				evaluatedList, err := evalAST(t, env)
 				if err != nil {
 					return nil, err
 				}
